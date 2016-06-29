@@ -30,7 +30,6 @@ using System.Collections.Generic;
 using SearchAThing.Patterns.MongoDBWpf.Ents;
 using System.Collections;
 using System.Linq;
-using System.Collections.ObjectModel;
 
 namespace SearchAThing
 {
@@ -99,16 +98,24 @@ namespace SearchAThing
         /// See MongoConcurrency example ( https://github.com/devel0/SearchAThing.Patterns )
         /// </summary>        
         public static IEnumerable<UpdateDefinition<T>> Changes<T>(this IMongoEntityTrackChanges obj,
-            UpdateDefinitionBuilder<T> updater, List<UpdateDefinition<T>> updatesAdd, List<UpdateDefinition<T>> updatesDel) where T : Entity
+            UpdateDefinitionBuilder<T> updater, List<UpdateDefinition<T>> updatesAdd, List<UpdateDefinition<T>> updatesDel, string prefix = "", Type _type = null) where T : Entity
         {
-            var type = typeof(T);
+            var type = _type ?? typeof(T);
 
             if (type.GetInterface(tIMongoEntityTrackChanges.Name) != tIMongoEntityTrackChanges) yield break;
+
+            Func<string, string> fullname = (x) =>
+            {
+                if (string.IsNullOrEmpty(prefix))
+                    return x;
+                else
+                    return $"{prefix}.{x}";
+            };
 
             // collect changes
             foreach (var cprop in obj.TrackChanges.ChangedProperties)
             {
-                yield return updater.Set(cprop, type.GetProperty(cprop).GetMethod.Invoke(obj, null));
+                yield return updater.Set(fullname(cprop), type.GetProperty(cprop).GetMethod.Invoke(obj, null));
             }
 
             HashSet<IMongoEntityTrackChanges> hsDeleted = null;
@@ -149,7 +156,7 @@ namespace SearchAThing
                                 else
                                 {
                                     // recurse on property
-                                    foreach (var x in ChangesRecurse(y, updater, $"{prop.Name}.{idx}", collElementType))
+                                    foreach (var x in Changes(y, updater, updatesAdd, updatesDel, $"{fullname(prop.Name)}.{idx}", collElementType))
                                         yield return x;
                                 }
 
@@ -165,34 +172,12 @@ namespace SearchAThing
                 if (prop.PropertyType.GetInterface(tIMongoEntityTrackChanges.Name) != tIMongoEntityTrackChanges) continue;
 
                 // recurse on property
-                foreach (var x in ChangesRecurse(prop.GetMethod.Invoke(obj, null) as IMongoEntityTrackChanges, updater, prop.Name, prop.PropertyType))
+                foreach (var x in Changes(prop.GetMethod.Invoke(obj, null) as IMongoEntityTrackChanges, updater,
+                    updatesAdd, updatesDel, fullname(prop.Name), prop.PropertyType))
                     yield return x;
             }
         }
-
-        static IEnumerable<UpdateDefinition<T>> ChangesRecurse<T>(this IMongoEntityTrackChanges obj,
-            UpdateDefinitionBuilder<T> updater, string prefix, Type type) where T : Entity
-        {
-            // collect changes
-            foreach (var cprop in obj.TrackChanges.ChangedProperties)
-            {
-                var fullname = $"{prefix}.{cprop}";
-
-                yield return updater.Set(fullname, type.GetProperty(cprop).GetMethod.Invoke(obj, null));
-            }
-
-            // scan properties
-            var props = type.GetProperties();
-
-            foreach (var prop in props)
-            {
-                if (prop.PropertyType.GetInterface(tIMongoEntityTrackChanges.Name) != tIMongoEntityTrackChanges) continue;
-
-                foreach (var x in ChangesRecurse(prop.GetMethod.Invoke(obj, null) as IMongoEntityTrackChanges, updater, $"{prefix}.{prop.Name}", prop.PropertyType))
-                    yield return x;
-            }
-        }
-
+       
         public static void SetAsNew<T>(this ICollection<T> coll, IMongoEntityTrackChanges collectionOwner, T newItem) where T : IMongoEntityTrackChanges
         {
             collectionOwner.TrackChanges.NewItems.Add(newItem);
