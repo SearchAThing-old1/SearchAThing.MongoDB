@@ -1,4 +1,4 @@
-﻿#region SearchAThing.Core, Copyright(C) 2015-2016 Lorenzo Delana, License under MIT
+﻿#region SearchAThing.MongoDB, Copyright(C) 2016 Lorenzo Delana, License under MIT
 /*
 * The MIT License(MIT)
 * Copyright(c) 2016 Lorenzo Delana, https://searchathing.com
@@ -29,9 +29,47 @@ using System;
 using System.Collections.Generic;
 using SearchAThing.Patterns.MongoDBWpf.Ents;
 using System.Collections;
+using System.Linq;
+using System.Collections.ObjectModel;
 
 namespace SearchAThing
 {
+
+    namespace MongoDB
+    {
+
+        public class MongoEntityTrackChanges
+        {
+
+            #region ChangedProperties [pgps]
+            public HashSet<string> ChangedProperties { get; private set; }
+            #endregion
+
+            #region NewItems [pgps]
+            public HashSet<IMongoEntityTrackChanges> NewItems { get; private set; }
+            #endregion
+
+            #region DeletedItems [pgps]
+            public Dictionary<ICollection, HashSet<IMongoEntityTrackChanges>> DeletedItems { get; private set; }
+            #endregion
+
+            public MongoEntityTrackChanges()
+            {
+                ChangedProperties = new HashSet<string>();
+                NewItems = new HashSet<IMongoEntityTrackChanges>();
+                DeletedItems = new Dictionary<ICollection, HashSet<IMongoEntityTrackChanges>>();
+            }
+
+            public void Clear()
+            {
+                ChangedProperties.Clear();
+                NewItems.Clear();
+                DeletedItems.Clear();
+            }
+
+        }
+
+    }
 
     public static partial class Extensions
     {
@@ -39,23 +77,41 @@ namespace SearchAThing
         static Type tIMongoEntityTrackChanges = typeof(IMongoEntityTrackChanges);
         static Type tICollection = typeof(ICollection);
 
+        public static void UpdateWithTrack<T>(this T obj, Repository<T> repo) where T : Entity, IMongoEntityTrackChanges
+        {
+            var updatesAdd = new List<UpdateDefinition<T>>();
+            var updatesDelete = new List<UpdateDefinition<T>>();
+
+            var updates = obj.Changes(repo.Updater, updatesAdd, updatesDelete).ToArray();
+            repo.Update(obj, updates); // do field updates
+
+            // do object add
+            if (updatesAdd.Count > 0) repo.Update(obj, updatesAdd.ToArray());
+
+            // do object del
+            if (updatesDelete.Count > 0) repo.Update(obj, updatesDelete.ToArray());
+
+            obj.TrackChanges.Clear();
+        }
+
         /// <summary>
         /// Retrieve list of field updates and clear the status of ChangedProperties.
         /// See MongoConcurrency example ( https://github.com/devel0/SearchAThing.Patterns )
         /// </summary>        
-        public static IEnumerable<UpdateDefinition<T>> Changes<T>(this IMongoEntityTrackChanges obj, UpdateDefinitionBuilder<T> updater) where T : Entity
+        public static IEnumerable<UpdateDefinition<T>> Changes<T>(this IMongoEntityTrackChanges obj,
+            UpdateDefinitionBuilder<T> updater, List<UpdateDefinition<T>> updatesAdd, List<UpdateDefinition<T>> updatesDel) where T : Entity
         {
             var type = typeof(T);
 
             if (type.GetInterface(tIMongoEntityTrackChanges.Name) != tIMongoEntityTrackChanges) yield break;
 
             // collect changes
-            foreach (var cprop in obj.ChangedProperties)
+            foreach (var cprop in obj.TrackChanges.ChangedProperties)
             {
                 yield return updater.Set(cprop, type.GetProperty(cprop).GetMethod.Invoke(obj, null));
             }
 
-            obj.ChangedProperties.Clear();
+            HashSet<IMongoEntityTrackChanges> hsDeleted = null;
 
             // scan properties
             var props = type.GetProperties();
@@ -79,11 +135,23 @@ namespace SearchAThing
                             int idx = 0;
 
                             // sweep collection elements
-                            foreach (var y in coll)
+                            foreach (var y in coll.Cast<IMongoEntityTrackChanges>())
                             {
-                                // recurse on property
-                                foreach (var x in ChangesRecurse((IMongoEntityTrackChanges)y, updater, $"{prop.Name}.{idx}", collElementType))
-                                    yield return x;
+                                if (obj.TrackChanges.NewItems.Contains(y))
+                                {
+                                    updatesAdd.Add(updater.AddToSet(prop.Name, y));
+                                }
+                                else if (obj.TrackChanges.DeletedItems.TryGetValue(coll, out hsDeleted))
+                                {
+                                    foreach (var x in hsDeleted) updatesDel.Add(updater.Pull(prop.Name, x));
+                                    obj.TrackChanges.DeletedItems.Remove(coll);
+                                }
+                                else
+                                {
+                                    // recurse on property
+                                    foreach (var x in ChangesRecurse(y, updater, $"{prop.Name}.{idx}", collElementType))
+                                        yield return x;
+                                }
 
                                 ++idx;
                             }
@@ -106,14 +174,12 @@ namespace SearchAThing
             UpdateDefinitionBuilder<T> updater, string prefix, Type type) where T : Entity
         {
             // collect changes
-            foreach (var cprop in obj.ChangedProperties)
+            foreach (var cprop in obj.TrackChanges.ChangedProperties)
             {
                 var fullname = $"{prefix}.{cprop}";
 
                 yield return updater.Set(fullname, type.GetProperty(cprop).GetMethod.Invoke(obj, null));
             }
-
-            obj.ChangedProperties.Clear();
 
             // scan properties
             var props = type.GetProperties();
@@ -125,6 +191,23 @@ namespace SearchAThing
                 foreach (var x in ChangesRecurse(prop.GetMethod.Invoke(obj, null) as IMongoEntityTrackChanges, updater, $"{prefix}.{prop.Name}", prop.PropertyType))
                     yield return x;
             }
+        }
+
+        public static void SetAsNew<T>(this ICollection<T> coll, IMongoEntityTrackChanges collectionOwner, T newItem) where T : IMongoEntityTrackChanges
+        {
+            collectionOwner.TrackChanges.NewItems.Add(newItem);
+        }
+
+        public static void SetAsDeleted<T>(this ICollection coll, IMongoEntityTrackChanges collectionOwner, T oldItem) where T : IMongoEntityTrackChanges
+        {
+            HashSet<IMongoEntityTrackChanges> hs = null;
+
+            if (!collectionOwner.TrackChanges.DeletedItems.TryGetValue(coll, out hs))
+            {
+                hs = new HashSet<IMongoEntityTrackChanges>();
+                collectionOwner.TrackChanges.DeletedItems.Add(coll, hs);
+            }
+            hs.Add(oldItem);
         }
 
     }

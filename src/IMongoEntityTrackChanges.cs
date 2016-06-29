@@ -1,4 +1,4 @@
-﻿#region SearchAThing.Core, Copyright(C) 2015-2016 Lorenzo Delana, License under MIT
+﻿#region SearchAThing.MongoDB, Copyright(C) 2016 Lorenzo Delana, License under MIT
 /*
 * The MIT License(MIT)
 * Copyright(c) 2016 Lorenzo Delana, https://searchathing.com
@@ -23,7 +23,7 @@
 */
 #endregion
 
-using System.Collections.Generic;
+using SearchAThing.MongoDB;
 
 namespace SearchAThing.Patterns.MongoDBWpf.Ents
 {
@@ -33,10 +33,10 @@ namespace SearchAThing.Patterns.MongoDBWpf.Ents
     /// https://github.com/devel0/SearchAThing.Patterns
     /// </summary>
     public interface IMongoEntityTrackChanges
-    {        
+    {
 
-        HashSet<string> ChangedProperties { get; }
-
+        MongoEntityTrackChanges TrackChanges { get; }
+        
     }
 
 }
