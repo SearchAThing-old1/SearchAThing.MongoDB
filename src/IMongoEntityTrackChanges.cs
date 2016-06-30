@@ -23,9 +23,7 @@
 */
 #endregion
 
-using SearchAThing.MongoDB;
-
-namespace SearchAThing.Patterns.MongoDBWpf.Ents
+namespace SearchAThing.MongoDB
 {
 
     /// <summary>

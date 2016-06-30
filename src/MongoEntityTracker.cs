@@ -27,9 +27,9 @@ using MongoDB.Driver;
 using Repository.Mongo;
 using System;
 using System.Collections.Generic;
-using SearchAThing.Patterns.MongoDBWpf.Ents;
 using System.Collections;
 using System.Linq;
+using SearchAThing.MongoDB;
 
 namespace SearchAThing
 {
