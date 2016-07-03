@@ -128,16 +128,23 @@ namespace SearchAThing
                 if (prop.PropertyType.GetInterface(tICollection.Name) == tICollection) // sweep collection
                 {
                     var coll = (ICollection)prop.GetMethod.Invoke(obj, null);
+                    var collGenericArguments = prop.PropertyType.GetGenericArguments();
+                    if (collGenericArguments.Length != 1) continue; // search for types ICollection<T>
 
-                    if (coll != null && coll.Count > 0)
+                    var collElementType = collGenericArguments[0];
+                    var collMatchType = collElementType.GetInterface(tIMongoEntityTrackChanges.Name) == tIMongoEntityTrackChanges;
+
+                    if (coll != null && collMatchType)
                     {
-                        var en = coll.GetEnumerator();
-                        en.MoveNext();
+                        // check deleted items
+                        if (obj.TrackChanges.DeletedItems.TryGetValue(coll, out hsDeleted))
+                        {
+                            foreach (var x in hsDeleted) updatesDel.Add(updater.Pull(fullname(prop.Name), x));
+                            obj.TrackChanges.DeletedItems.Remove(coll);
+                        }
 
-                        var collElementType = en.Current.GetType();
-
-                        // check if the first collection object is compatible with IMongoEntityTrackChanges
-                        if (collElementType.GetInterface(tIMongoEntityTrackChanges.Name) == tIMongoEntityTrackChanges)
+                        // check modified/added items
+                        if (coll.Count > 0)
                         {
                             int idx = 0;
 
@@ -147,11 +154,6 @@ namespace SearchAThing
                                 if (obj.TrackChanges.NewItems.Contains(y))
                                 {
                                     updatesAdd.Add(updater.AddToSet(prop.Name, y));
-                                }
-                                else if (obj.TrackChanges.DeletedItems.TryGetValue(coll, out hsDeleted))
-                                {
-                                    foreach (var x in hsDeleted) updatesDel.Add(updater.Pull(prop.Name, x));
-                                    obj.TrackChanges.DeletedItems.Remove(coll);
                                 }
                                 else
                                 {
@@ -177,7 +179,7 @@ namespace SearchAThing
                     yield return x;
             }
         }
-       
+
         public static void SetAsNew<T>(this ICollection<T> coll, IMongoEntityTrackChanges collectionOwner, T newItem) where T : IMongoEntityTrackChanges
         {
             collectionOwner.TrackChanges.NewItems.Add(newItem);
