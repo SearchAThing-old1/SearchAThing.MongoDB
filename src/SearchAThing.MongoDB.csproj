@@ -79,11 +79,22 @@
       <Link>MongoRepository\Repository.cs</Link>
     </Compile>
     <Compile Include="IMongoEntityTrackChanges.cs" />
+    <Compile Include="MongoContext.cs" />
+    <Compile Include="IGenericMongoRepository.cs" />
+    <Compile Include="AttachedMongoEntity.cs" />
+    <Compile Include="MongoRepository.cs" />
+    <Compile Include="MongoEntity.cs" />
     <Compile Include="MongoEntityTracker.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\SearchAThing.Core\src\SearchAThing.Core.csproj">
+      <Project>{8162a30e-a46d-4a78-ba12-1f376ac6f1b4}</Project>
+      <Name>SearchAThing.Core</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

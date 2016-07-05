@@ -30,6 +30,7 @@ using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
 using SearchAThing.MongoDB;
+using MongoDB.Bson.Serialization.Attributes;
 
 namespace SearchAThing
 {
@@ -73,15 +74,17 @@ namespace SearchAThing
     public static partial class Extensions
     {
 
+        static Type tBsonIgnoreAttribute = typeof(BsonIgnoreAttribute);
         static Type tIMongoEntityTrackChanges = typeof(IMongoEntityTrackChanges);
         static Type tICollection = typeof(ICollection);
 
-        public static void UpdateWithTrack<T>(this T obj, Repository<T> repo) where T : Entity, IMongoEntityTrackChanges
+        public static void UpdateWithTrack<T>(this T obj, IRepository<T> repo) where T : Entity, IMongoEntityTrackChanges
         {
             var updatesAdd = new List<UpdateDefinition<T>>();
             var updatesDelete = new List<UpdateDefinition<T>>();
 
-            var updates = obj.Changes(repo.Updater, updatesAdd, updatesDelete).ToArray();
+            var hsRecursion = new HashSet<object>();
+            var updates = obj.Changes(repo.Updater, updatesAdd, updatesDelete, hsRecursion).ToArray();
             repo.Update(obj, updates); // do field updates
 
             // do object add
@@ -98,11 +101,17 @@ namespace SearchAThing
         /// See MongoConcurrency example ( https://github.com/devel0/SearchAThing.Patterns )
         /// </summary>        
         public static IEnumerable<UpdateDefinition<T>> Changes<T>(this IMongoEntityTrackChanges obj,
-            UpdateDefinitionBuilder<T> updater, List<UpdateDefinition<T>> updatesAdd, List<UpdateDefinition<T>> updatesDel, string prefix = "", Type _type = null) where T : Entity
+            UpdateDefinitionBuilder<T> updater, List<UpdateDefinition<T>> updatesAdd, List<UpdateDefinition<T>> updatesDel,
+            HashSet<object> hsRecursion, string prefix = "", Type _type = null) where T : Entity
         {
+            if (hsRecursion.Contains(obj)) yield break; // block recursion
+
+            hsRecursion.Add(obj);
+
             var type = _type ?? typeof(T);
 
             if (type.GetInterface(tIMongoEntityTrackChanges.Name) != tIMongoEntityTrackChanges) yield break;
+            if (type.GetInterface(tBsonIgnoreAttribute.Name) == tBsonIgnoreAttribute) yield break;
 
             Func<string, string> fullname = (x) =>
             {
@@ -132,7 +141,10 @@ namespace SearchAThing
                     if (collGenericArguments.Length != 1) continue; // search for types ICollection<T>
 
                     var collElementType = collGenericArguments[0];
-                    var collMatchType = collElementType.GetInterface(tIMongoEntityTrackChanges.Name) == tIMongoEntityTrackChanges;
+                    var collMatchType =
+                        collElementType.GetInterface(tIMongoEntityTrackChanges.Name) == tIMongoEntityTrackChanges
+                        &&
+                        collElementType.GetInterface(tBsonIgnoreAttribute.Name) != tBsonIgnoreAttribute;
 
                     if (coll != null && collMatchType)
                     {
@@ -158,7 +170,7 @@ namespace SearchAThing
                                 else
                                 {
                                     // recurse on property
-                                    foreach (var x in Changes(y, updater, updatesAdd, updatesDel, $"{fullname(prop.Name)}.{idx}", collElementType))
+                                    foreach (var x in Changes(y, updater, updatesAdd, updatesDel, hsRecursion, $"{fullname(prop.Name)}.{idx}", collElementType))
                                         yield return x;
                                 }
 
@@ -172,10 +184,11 @@ namespace SearchAThing
 
                 // skip non IMongoEntityTrackChanges propertie
                 if (prop.PropertyType.GetInterface(tIMongoEntityTrackChanges.Name) != tIMongoEntityTrackChanges) continue;
+                if (prop.PropertyType.GetInterface(tBsonIgnoreAttribute.Name) == tBsonIgnoreAttribute) continue;
 
                 // recurse on property
                 foreach (var x in Changes(prop.GetMethod.Invoke(obj, null) as IMongoEntityTrackChanges, updater,
-                    updatesAdd, updatesDel, fullname(prop.Name), prop.PropertyType))
+                    updatesAdd, updatesDel, hsRecursion, fullname(prop.Name), prop.PropertyType))
                     yield return x;
             }
         }

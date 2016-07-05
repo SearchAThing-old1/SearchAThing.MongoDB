@@ -23,21 +23,23 @@
 */
 #endregion
 
-namespace SearchAThing.MongoDB
+using Repository.Mongo;
+
+namespace SearchAThing
 {
 
-    /// <summary>
-    /// See MongoConcurrency example
-    /// https://github.com/devel0/SearchAThing.Patterns
-    /// </summary>
-    public interface IMongoEntityTrackChanges
+    namespace MongoDB
     {
 
-        MongoEntityTrackChanges TrackChanges { get; }
+        public interface IGenericMongoRepository
+        {
 
-        void BeforeSave();
-        void AfterSave();
-        
+            void GenericInsert(MongoEntity ent);
+
+            void GenericUpdate(MongoContext ctx, MongoEntity ent, MongoEntity origEnt);
+
+        }
+
     }
 
 }

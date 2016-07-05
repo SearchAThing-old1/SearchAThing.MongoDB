@@ -1,6 +1,17 @@
 # SearchAThing.MongoDB
 SearchAThing MongoDB extensions
 
+## Mongo Entity structure
+
+- primitive types
+- navigable type
+- primitive collections
+- navigable collections
+
+### Requirements
+
+- 
+
 [Example](https://github.com/devel0/SearchAThing.Patterns/tree/master/src/MongoConcurrency)
 
 ## Build
