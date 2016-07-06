@@ -46,6 +46,10 @@ namespace SearchAThing
         public class MongoRepository<T> : Repository<T>, IGenericMongoRepository where T : MongoEntity
         {
 
+            public MongoRepository(string connectionString) : base(connectionString)
+            {
+            }
+
             /// <summary>
             /// Insert a generic MongoEntity which is in New state
             /// </summary>            
@@ -79,69 +83,23 @@ namespace SearchAThing
                         updatesChanges.Add(Updater.Set(diff.PropertyFullPath, diff.NewPropertyValue));
                 }
 
-                //var updates = Changes(ctx, ent, origEnt, Updater, updatesAdd, updatesDelete).ToArray();
+                // do field updates
+                if (updatesChanges.Count > 0) Update((T)ent, updatesChanges.ToArray());
 
-                if (updatesChanges.Count > 0) Update((T)ent, updatesChanges.ToArray()); // do field updates
-                if (updatesAdd.Count > 0) Update((T)ent, updatesAdd.ToArray()); // do collection add
-                if (updatesDelete.Count > 0) Update((T)ent, updatesDelete.ToArray()); // do collection del
+                // do collection add
+                if (updatesAdd.Count > 0) Update((T)ent, updatesAdd.ToArray());
 
-                /*
-                // do object add
-                if (updatesAdd.Count > 0) repo.Update(obj, updatesAdd.ToArray());
-
-                // do object del
-                if (updatesDelete.Count > 0) repo.Update(obj, updatesDelete.ToArray());
-                */
+                // do collection del
+                if (updatesDelete.Count > 0) Update((T)ent, updatesDelete.ToArray());
             }
-
-            static Type tINotifyPropertyChanged = typeof(INotifyPropertyChanged);
-            //static Type tIMongoEntityTrackChanges = typeof(IMongoEntityTrackChanges);
-            static Type tICollection = typeof(ICollection);
 
             /// <summary>
-            /// Retrieve list of field updates and clear the status of ChangedProperties.
-            /// See MongoConcurrency example ( https://github.com/devel0/SearchAThing.Patterns )
-            /// </summary>        
-            static IEnumerable<UpdateDefinition<T>> Changes(MongoContext ctx, object obj, object objOrig,
-                UpdateDefinitionBuilder<T> updater, List<UpdateDefinition<T>> updatesAdd, List<UpdateDefinition<T>> updatesDel,
-                string prefix = "", Type _type = null)
+            /// Remove a generic MongoEntity which is in Deleted state
+            /// </summary>
+            /// <param name="ent"></param>
+            public void GenericDelete(MongoEntity ent)
             {
-                var type = _type ?? typeof(T);
-
-                //if (type.GetInterface(tINotifyPropertyChanged.Name) != tINotifyPropertyChanged) yield break;
-                //if (type.GetInterface(tIMongoEntityTrackChanges.Name) != tIMongoEntityTrackChanges) yield break;
-
-                Func<string, string> fullname = (x) =>
-                {
-                    if (string.IsNullOrEmpty(prefix))
-                        return x;
-                    else
-                        return $"{prefix}.{x}";
-                };
-
-                //yield return updater.Set(fullname(cprop), type.GetProperty(cprop).GetMethod.Invoke(obj, null));
-
-                // scan properties
-                var props = type.GetProperties();
-
-                foreach (var prop in props)
-                {
-
-                    var o = prop;
-                    //if (prop.PropertyType.GetInterface(tIMongoEntityTrackChanges.Name) != tIMongoEntityTrackChanges) continue;
-                    //if (prop.PropertyType.GetInterface(tINotifyPropertyChanged.Name) != tINotifyPropertyChanged) continue;
-
-                    // recurse on property
-                    /*foreach (var x in Changes(ctx, prop.GetMethod.Invoke(obj, null), updater,
-                        updatesAdd, updatesDel, fullname(prop.Name), prop.PropertyType))
-                        yield return x;*/
-                }
-
-                yield break;
-            }
-
-            public MongoRepository(string connectionString) : base(connectionString)
-            {
+                Delete((T)ent);
             }
 
         }

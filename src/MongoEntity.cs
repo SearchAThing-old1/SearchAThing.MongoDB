@@ -85,10 +85,27 @@ namespace SearchAThing
             }
             #endregion
 
-            public DateTime CreateTimestamp { get { return ObjectId.CreationTime; } }
+            public DateTime CreateTimestampFromObjectId() { return ObjectId.CreationTime; }
 
             public MongoEntity()
             {
+            }
+
+            /// <summary>
+            /// Sets the state to deleted
+            /// </summary>
+            public void Delete()
+            {
+                State = MongoEntityState.Deleted;
+            }
+
+            internal protected virtual void BeforeSave()
+            {
+            }
+
+            internal protected virtual void AfterSave()
+            {
+
             }
 
         }

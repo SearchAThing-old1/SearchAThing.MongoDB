@@ -38,6 +38,8 @@ namespace SearchAThing
 
             void GenericUpdate(MongoContext ctx, MongoEntity ent, MongoEntity origEnt);
 
+            void GenericDelete(MongoEntity ent);
+
         }
 
     }

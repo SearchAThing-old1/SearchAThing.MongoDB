@@ -81,6 +81,9 @@ namespace SearchAThing
                 attachedEntities.Add(new AttachedMongoEntity(ent));
             }
 
+            /// <summary>
+            /// Creates a new MongoEntity and attach as New to this context
+            /// </summary>            
             public T New<T>() where T : MongoEntity, new()
             {
                 var ensureRepo = GetRepository<T>();
@@ -90,7 +93,7 @@ namespace SearchAThing
                 Attach(ent, MongoEntityState.New);
 
                 return ent;
-            }
+            }            
 
             public IEnumerable<T> FindAll<T>() where T : MongoEntity
             {
@@ -117,7 +120,7 @@ namespace SearchAThing
             }
 
             public void Save()
-            {
+            {                
                 foreach (var aent in attachedEntities)
                 {
                     var repo = repositoryFactory[aent.Entity.GetType()];
@@ -126,15 +129,25 @@ namespace SearchAThing
                     {
                         case MongoEntityState.New:
                             {
+                                aent.Entity.BeforeSave();
                                 repo.GenericInsert(aent.Entity);
                                 aent.Entity.State = MongoEntityState.Undefined;
                                 aent.ResetOrigEntity();
+                                aent.Entity.AfterSave();
                             }
                             break;
 
                         case MongoEntityState.Undefined:
                             {
+                                aent.Entity.BeforeSave();
                                 repo.GenericUpdate(this, aent.Entity, aent.OrigEntity);
+                                aent.Entity.AfterSave();
+                            }
+                            break;
+
+                        case MongoEntityState.Deleted:
+                            {
+                                repo.GenericDelete(aent.Entity);
                             }
                             break;
                     }
