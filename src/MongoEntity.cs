@@ -32,6 +32,7 @@ using System.Linq;
 using SearchAThing.MongoDB;
 using MongoDB.Bson.Serialization.Attributes;
 using System.ComponentModel;
+using System.Diagnostics;
 
 namespace SearchAThing
 {
@@ -99,8 +100,24 @@ namespace SearchAThing
                 State = MongoEntityState.Deleted;
             }
 
+            public event EventHandler BeforeSaveEvent;
+
+            public event EventHandler AfterSaveEvent;
+
+            internal void BeforeSaveAct()
+            {                
+                BeforeSaveEvent?.Invoke(this, null);                
+                BeforeSave();
+            }
+
             internal protected virtual void BeforeSave()
             {
+            }
+
+            internal void AfterSaveAct()
+            {
+                AfterSaveEvent?.Invoke(this, null);
+                AfterSave();
             }
 
             internal protected virtual void AfterSave()

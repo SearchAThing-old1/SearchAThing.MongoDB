@@ -25,6 +25,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq.Expressions;
 
 namespace SearchAThing
@@ -93,7 +94,7 @@ namespace SearchAThing
                 Attach(ent, MongoEntityState.New);
 
                 return ent;
-            }            
+            }
 
             public IEnumerable<T> FindAll<T>() where T : MongoEntity
             {
@@ -120,28 +121,28 @@ namespace SearchAThing
             }
 
             public void Save()
-            {                
+            {
                 foreach (var aent in attachedEntities)
                 {
                     var repo = repositoryFactory[aent.Entity.GetType()];
-
+                    
                     switch (aent.Entity.State)
                     {
                         case MongoEntityState.New:
                             {
-                                aent.Entity.BeforeSave();
+                                aent.Entity.BeforeSaveAct(); // manage forward of event and call overridable OnBeforeSvae                                
                                 repo.GenericInsert(aent.Entity);
                                 aent.Entity.State = MongoEntityState.Undefined;
                                 aent.ResetOrigEntity();
-                                aent.Entity.AfterSave();
+                                aent.Entity.AfterSaveAct(); // manage forward of event and call overridable OnBeforeSvae                                
                             }
                             break;
 
                         case MongoEntityState.Undefined:
                             {
-                                aent.Entity.BeforeSave();
+                                aent.Entity.BeforeSaveAct(); // manage forward of event and call overridable OnBeforeSvae                                
                                 repo.GenericUpdate(this, aent.Entity, aent.OrigEntity);
-                                aent.Entity.AfterSave();
+                                aent.Entity.AfterSaveAct(); // manage forward of event and call overridable OnBeforeSvae                                
                             }
                             break;
 
