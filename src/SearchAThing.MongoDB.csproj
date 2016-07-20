@@ -57,34 +57,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="..\..\mongorepository\repository.mongo\attributes\CollectionName.cs">
-      <Link>MongoRepository\Attributes\CollectionName.cs</Link>
-    </Compile>
-    <Compile Include="..\..\mongorepository\repository.mongo\attributes\ConnectionName.cs">
-      <Link>MongoRepository\Attributes\ConnectionName.cs</Link>
-    </Compile>
-    <Compile Include="..\..\mongorepository\repository.mongo\Database.cs">
-      <Link>MongoRepository\Database.cs</Link>
-    </Compile>
-    <Compile Include="..\..\mongorepository\repository.mongo\Entity.cs">
-      <Link>MongoRepository\Entity.cs</Link>
-    </Compile>
-    <Compile Include="..\..\mongorepository\repository.mongo\IEntity.cs">
-      <Link>MongoRepository\IEntity.cs</Link>
-    </Compile>
-    <Compile Include="..\..\mongorepository\repository.mongo\IRepository.cs">
-      <Link>MongoRepository\IRepository.cs</Link>
-    </Compile>
-    <Compile Include="..\..\mongorepository\repository.mongo\Repository.cs">
-      <Link>MongoRepository\Repository.cs</Link>
-    </Compile>
-    <Compile Include="IMongoEntityTrackChanges.cs" />
     <Compile Include="MongoContext.cs" />
     <Compile Include="IGenericMongoRepository.cs" />
     <Compile Include="AttachedMongoEntity.cs" />
     <Compile Include="MongoRepository.cs" />
     <Compile Include="MongoEntity.cs" />
-    <Compile Include="MongoEntityTracker.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

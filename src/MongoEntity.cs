@@ -24,7 +24,6 @@
 #endregion
 
 using MongoDB.Driver;
-using Repository.Mongo;
 using System;
 using System.Collections.Generic;
 using System.Collections;
@@ -33,6 +32,7 @@ using SearchAThing.MongoDB;
 using MongoDB.Bson.Serialization.Attributes;
 using System.ComponentModel;
 using System.Diagnostics;
+using MongoDB.Bson;
 
 namespace SearchAThing
 {
@@ -65,8 +65,20 @@ namespace SearchAThing
 
         }
 
-        public class MongoEntity : Entity, INotifyPropertyChanged
+        public class MongoEntity : INotifyPropertyChanged
         {
+                        
+            public ObjectId ObjectId
+            {
+                get
+                {
+                    if (Id == null) Id = ObjectId.GenerateNewId().ToString();
+                    return ObjectId.Parse(Id);
+                }
+            }
+
+            [BsonRepresentation(BsonType.ObjectId)]
+            public string Id { get; set; }
 
             #region State [pgis]
             [BsonIgnore]
@@ -89,7 +101,7 @@ namespace SearchAThing
             public DateTime CreateTimestampFromObjectId() { return ObjectId.CreationTime; }
 
             public MongoEntity()
-            {
+            {                
             }
 
             /// <summary>
@@ -105,8 +117,8 @@ namespace SearchAThing
             public event EventHandler AfterSaveEvent;
 
             internal void BeforeSaveAct()
-            {                
-                BeforeSaveEvent?.Invoke(this, null);                
+            {
+                BeforeSaveEvent?.Invoke(this, null);
                 BeforeSave();
             }
 

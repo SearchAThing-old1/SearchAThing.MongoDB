@@ -23,7 +23,7 @@
 */
 #endregion
 
-using Repository.Mongo;
+using MongoDB.Driver;
 
 namespace SearchAThing
 {
@@ -34,11 +34,19 @@ namespace SearchAThing
         public interface IGenericMongoRepository
         {
 
-            void GenericInsert(MongoEntity ent);
+            void GenericInsert(MongoContext ctx, MongoEntity ent);
 
             void GenericUpdate(MongoContext ctx, MongoEntity ent, MongoEntity origEnt);
 
-            void GenericDelete(MongoEntity ent);
+            void GenericDelete(MongoContext ctx, MongoEntity ent);
+
+        }
+
+        public interface ITypedMongoRepository<T>  : IGenericMongoRepository            
+            where T : MongoEntity
+        {
+
+            IMongoCollection<T> Collection { get; }
 
         }
 

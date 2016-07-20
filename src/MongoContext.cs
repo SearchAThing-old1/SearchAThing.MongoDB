@@ -23,10 +23,13 @@
 */
 #endregion
 
+using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq.Expressions;
+using MongoDB.Driver.Linq;
+using System.Linq;
 
 namespace SearchAThing
 {
@@ -41,30 +44,42 @@ namespace SearchAThing
             public string ConnectionString { get; private set; }
             #endregion
 
-            public MongoContext(string connectionString)
+            public bool Debug { get; private set; }
+
+            public MongoClient MongoClient { get; private set; }
+            public string DbName { get; private set; }
+            public IMongoDatabase Database { get; private set; }
+
+            public MongoContext(string connectionString, bool debug = false)
             {
                 ConnectionString = connectionString;
+                Debug = debug;
+                MongoClient = new MongoClient(ConnectionString);
+                DbName = new MongoUrl(ConnectionString).DatabaseName;
+                Database = MongoClient.GetDatabase(DbName);
             }
 
-            #region repository factory
+            #region collection factory
             Dictionary<Type, IGenericMongoRepository> repositoryFactory = new Dictionary<Type, IGenericMongoRepository>();
 
-            MongoRepository<T> GetRepository<T>() where T : MongoEntity
+            public ITypedMongoRepository<T> GetRepository<T>() where T : MongoEntity
             {
                 var type = typeof(T);
 
+                ITypedMongoRepository<T> typedRepoObj = null;
                 IGenericMongoRepository repoObj = null;
 
                 if (!repositoryFactory.TryGetValue(type, out repoObj))
                 {
-                    var repo = new MongoRepository<T>(ConnectionString);
-                    repositoryFactory.Add(type, repo);
-                    repoObj = repo;
+                    typedRepoObj = new MongoRepository<T>(Database.GetCollection<T>(type.Name.ToLowerInvariant()));
+                    repositoryFactory.Add(type, typedRepoObj);
                 }
+                else
+                    typedRepoObj = (ITypedMongoRepository<T>)repoObj;
 
-                return (MongoRepository<T>)repoObj;
+                return typedRepoObj;
             }
-            #endregion
+            #endregion            
 
             List<AttachedMongoEntity> attachedEntities = new List<AttachedMongoEntity>();
 
@@ -98,7 +113,7 @@ namespace SearchAThing
 
             public IEnumerable<T> FindAll<T>() where T : MongoEntity
             {
-                var q = GetRepository<T>().FindAll();
+                var q = GetRepository<T>().Collection.AsQueryable();
 
                 foreach (var ent in q)
                 {
@@ -110,7 +125,7 @@ namespace SearchAThing
 
             public IEnumerable<T> Find<T>(Expression<Func<T, bool>> filter) where T : MongoEntity
             {
-                var q = GetRepository<T>().Find(filter);
+                var q = GetRepository<T>().Collection.AsQueryable();
 
                 foreach (var ent in q)
                 {
@@ -125,13 +140,13 @@ namespace SearchAThing
                 foreach (var aent in attachedEntities)
                 {
                     var repo = repositoryFactory[aent.Entity.GetType()];
-                    
+
                     switch (aent.Entity.State)
                     {
                         case MongoEntityState.New:
                             {
-                                aent.Entity.BeforeSaveAct(); // manage forward of event and call overridable OnBeforeSvae                                
-                                repo.GenericInsert(aent.Entity);
+                                aent.Entity.BeforeSaveAct(); // manage forward of event and call overridable OnBeforeSvae                                                                
+                                repo.GenericInsert(this, aent.Entity);
                                 aent.Entity.State = MongoEntityState.Undefined;
                                 aent.ResetOrigEntity();
                                 aent.Entity.AfterSaveAct(); // manage forward of event and call overridable OnBeforeSvae                                
@@ -142,13 +157,14 @@ namespace SearchAThing
                             {
                                 aent.Entity.BeforeSaveAct(); // manage forward of event and call overridable OnBeforeSvae                                
                                 repo.GenericUpdate(this, aent.Entity, aent.OrigEntity);
+                                aent.ResetOrigEntity();
                                 aent.Entity.AfterSaveAct(); // manage forward of event and call overridable OnBeforeSvae                                
                             }
                             break;
 
                         case MongoEntityState.Deleted:
                             {
-                                repo.GenericDelete(aent.Entity);
+                                repo.GenericDelete(this, aent.Entity);
                             }
                             break;
                     }
