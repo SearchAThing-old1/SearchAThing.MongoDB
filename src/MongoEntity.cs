@@ -109,6 +109,8 @@ namespace SearchAThing
             /// </summary>
             public void Delete()
             {
+                if (State == MongoEntityState.Detached)
+                    throw new Exception($"can't delete detached entity. Use ctx.Delete(x)");
                 State = MongoEntityState.Deleted;
             }
 

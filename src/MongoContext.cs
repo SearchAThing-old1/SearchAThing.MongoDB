@@ -97,6 +97,11 @@ namespace SearchAThing
                 attachedEntities.Add(new AttachedMongoEntity(ent));
             }
 
+            public void Delete<T>(T x) where T : MongoEntity
+            {
+                if (x.State == MongoEntityState.Detached) Attach(x, MongoEntityState.Deleted);
+            }
+
             /// <summary>
             /// Creates a new MongoEntity and attach as New to this context
             /// </summary>            
