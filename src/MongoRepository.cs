@@ -24,11 +24,7 @@
 #endregion
 
 using MongoDB.Driver;
-using SearchAThing.MongoDB;
-using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
 using SearchAThing.Core;
 using System.Diagnostics;
@@ -85,12 +81,7 @@ namespace SearchAThing
 
                         foreach (var x in diff.CollectionElementsToRemove)
                         {
-                            updatesCollDel.Add(Builders<T>.Update.Pull(diff.PropertyFullPath, x));
-
-                            // Collection.FindOneAndUpdate(x, Updater.Pull(diff.PropertyFullPath, x));
-
-
-                            // Updater.Unset(diff.PropertyFullPath + ".$"));
+                            updatesCollDel.Add(Builders<T>.Update.Pull(diff.PropertyFullPath, x));                            
                         }
                     }
                     else
@@ -117,32 +108,27 @@ namespace SearchAThing
                 // do collection add
                 if (updatesCollAdd.Count > 0)
                 {
-                    if (ctx.Debug)
+                    if (ctx.Debug) Debug.WriteLine($"Coll Add {updatesCollAdd.Count}");
+                    foreach (var x in updatesCollAdd)
                     {
-                        Debug.WriteLine($"Coll Add {updatesCollAdd.Count}");
-                        foreach (var x in updatesCollAdd)
-                        {
-                            Debug.WriteLine($"\t{x.ToString()}");
+                        if (ctx.Debug) Debug.WriteLine($"\t{x.ToString()}");
 
-                            var filter = Builders<T>.Filter.Eq((y) => y.Id, ent.Id);
-                            Collection.UpdateOne(filter, x);
-                        }
+                        var filter = Builders<T>.Filter.Eq((y) => y.Id, ent.Id);
+                        Collection.UpdateOne(filter, x);
                     }
                 }
 
                 // do collection del
                 if (updatesCollDel.Count > 0)
                 {
-                    if (ctx.Debug)
-                    {
-                        Debug.WriteLine($"Coll Del {updatesCollDel.Count}");
-                        foreach (var x in updatesCollDel)
-                        {
-                            Debug.WriteLine($"\t{x.ToString()}");
+                    if (ctx.Debug) Debug.WriteLine($"Coll Del {updatesCollDel.Count}");
 
-                            var filter = Builders<T>.Filter.Eq((y) => y.Id, ent.Id);
-                            Collection.UpdateOne(filter, x);
-                        }
+                    foreach (var x in updatesCollDel)
+                    {
+                        if (ctx.Debug) Debug.WriteLine($"\t{x.ToString()}");
+
+                        var filter = Builders<T>.Filter.Eq((y) => y.Id, ent.Id);
+                        Collection.UpdateOne(filter, x);
                     }
                 }
             }
