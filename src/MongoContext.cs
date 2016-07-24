@@ -117,6 +117,20 @@ namespace SearchAThing
                 return ent;
             }
 
+            /// <summary>
+            /// Creates a new MongoEntity and attach as New to this context
+            /// </summary>            
+            public T New<T>(T pre) where T : MongoEntity//, new()
+            {
+                var ensureRepo = GetRepository<T>();
+
+                var ent = pre;
+
+                Attach(ent, MongoEntityState.New);
+
+                return ent;
+            }
+
             public void Save()
             {
                 foreach (var aent in attachedEntities)
@@ -161,8 +175,8 @@ namespace SearchAThing
     {
 
         public static IEnumerable<T> Attach<T>(this IMongoQueryable<T> q, MongoContext ctx) where T : MongoEntity
-        {
-            foreach (var x in q) yield return ctx.Attach<T>(x);
+        {            
+            foreach (var x in q) yield return ctx.Attach<T>(x);            
         }
 
     }
