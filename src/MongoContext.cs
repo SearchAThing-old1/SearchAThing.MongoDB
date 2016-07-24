@@ -28,6 +28,9 @@ using MongoDB.Driver.Linq;
 using SearchAThing.MongoDB;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using System.Linq;
 
 namespace SearchAThing
 {
@@ -84,6 +87,41 @@ namespace SearchAThing
             #endregion                        
 
             List<AttachedMongoEntity> attachedEntities = new List<AttachedMongoEntity>();
+
+            public ObservableCollection<T> LoadOBC<T>(List<string> ChildrenIds) where T : MongoEntity
+            {
+                var _Children = GetRepository<T>()
+                        .Collection
+                        .AsQueryable().Where(r => ChildrenIds.Contains(r.Id))
+                        .Attach(this)
+                        .ToObservableCollection();
+
+                _Children.CollectionChanged += (a, b) =>
+                {
+                    switch (b.Action)
+                    {
+                        case NotifyCollectionChangedAction.Add:
+                            {
+                                foreach (var x in b.NewItems.Cast<T>()) ChildrenIds.Add(x.Id);
+                            }
+                            break;
+
+                        case NotifyCollectionChangedAction.Remove:
+                            {
+                                foreach (var x in b.OldItems.Cast<T>()) ChildrenIds.Remove(x.Id);
+                            }
+                            break;
+
+                        case NotifyCollectionChangedAction.Reset:
+                            {
+                                ChildrenIds.Clear();
+                            }
+                            break;
+                    }
+                };
+
+                return _Children;
+            }
 
             public T Attach<T>(T ent, MongoEntityState state = MongoEntityState.Undefined) where T : MongoEntity
             {
@@ -175,8 +213,8 @@ namespace SearchAThing
     {
 
         public static IEnumerable<T> Attach<T>(this IMongoQueryable<T> q, MongoContext ctx) where T : MongoEntity
-        {            
-            foreach (var x in q) yield return ctx.Attach<T>(x);            
+        {
+            foreach (var x in q) yield return ctx.Attach<T>(x);
         }
 
     }
