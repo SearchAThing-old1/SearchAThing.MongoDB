@@ -24,12 +24,10 @@
 #endregion
 
 using MongoDB.Driver;
+using MongoDB.Driver.Linq;
+using SearchAThing.MongoDB;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq.Expressions;
-using MongoDB.Driver.Linq;
-using System.Linq;
 
 namespace SearchAThing
 {
@@ -61,6 +59,7 @@ namespace SearchAThing
 
             #region collection factory
             Dictionary<Type, IGenericMongoRepository> repositoryFactory = new Dictionary<Type, IGenericMongoRepository>();
+            object repositoryFactoryLck = new object();
 
             public ITypedMongoRepository<T> GetRepository<T>() where T : MongoEntity
             {
@@ -69,32 +68,34 @@ namespace SearchAThing
                 ITypedMongoRepository<T> typedRepoObj = null;
                 IGenericMongoRepository repoObj = null;
 
-                if (!repositoryFactory.TryGetValue(type, out repoObj))
+                lock (repositoryFactoryLck)
                 {
-                    typedRepoObj = new MongoRepository<T>(Database.GetCollection<T>(type.Name.ToLowerInvariant()));
-                    repositoryFactory.Add(type, typedRepoObj);
+                    if (!repositoryFactory.TryGetValue(type, out repoObj))
+                    {
+                        typedRepoObj = new MongoRepository<T>(Database.GetCollection<T>(type.Name.ToLowerInvariant()));
+                        repositoryFactory.Add(type, typedRepoObj);
+                    }
+                    else
+                        typedRepoObj = (ITypedMongoRepository<T>)repoObj;
                 }
-                else
-                    typedRepoObj = (ITypedMongoRepository<T>)repoObj;
 
                 return typedRepoObj;
             }
-            #endregion            
+            #endregion                        
 
             List<AttachedMongoEntity> attachedEntities = new List<AttachedMongoEntity>();
 
-            void Attach<T>(T ent, MongoEntityState state) where T : MongoEntity
+            public T Attach<T>(T ent, MongoEntityState state = MongoEntityState.Undefined) where T : MongoEntity
             {
                 if (ent.State != MongoEntityState.Detached)
                     throw new Exception($"context already assigned to this mongo entity");
-
-                if (ent.State == MongoEntityState.Deleted)
-                    throw new Exception($"can't attach a mongo entity with state set to detached");
 
                 ent.MongoContext = this;
                 ent.State = state;
 
                 attachedEntities.Add(new AttachedMongoEntity(ent));
+
+                return ent;
             }
 
             public void Delete<T>(T x) where T : MongoEntity
@@ -114,30 +115,6 @@ namespace SearchAThing
                 Attach(ent, MongoEntityState.New);
 
                 return ent;
-            }
-
-            public IEnumerable<T> FindAll<T>() where T : MongoEntity
-            {
-                var q = GetRepository<T>().Collection.AsQueryable();
-
-                foreach (var ent in q)
-                {
-                    Attach(ent, MongoEntityState.Undefined);
-
-                    yield return ent;
-                }
-            }
-
-            public IEnumerable<T> Find<T>(Expression<Func<T, bool>> filter) where T : MongoEntity
-            {
-                var q = GetRepository<T>().Collection.AsQueryable();
-
-                foreach (var ent in q)
-                {
-                    Attach(ent, MongoEntityState.Undefined);
-
-                    yield return ent;
-                }
             }
 
             public void Save()
@@ -179,5 +156,16 @@ namespace SearchAThing
         }
 
     }
+
+    public static partial class Extensions
+    {
+
+        public static IEnumerable<T> Attach<T>(this IMongoQueryable<T> q, MongoContext ctx) where T : MongoEntity
+        {
+            foreach (var x in q) yield return ctx.Attach<T>(x);
+        }
+
+    }
+
 
 }

@@ -72,13 +72,26 @@ namespace SearchAThing
             {
                 get
                 {
-                    if (Id == null) Id = ObjectId.GenerateNewId().ToString();
+                    //if (Id == null) Id = ObjectId.GenerateNewId().ToString();
                     return ObjectId.Parse(Id);
                 }
             }
 
+            string _Id;
             [BsonRepresentation(BsonType.ObjectId)]
-            public string Id { get; set; }
+            public string Id
+            {
+                get
+                {
+                    if (_Id == null) _Id = ObjectId.GenerateNewId().ToString();
+                    return _Id;
+                }
+                set
+                {
+                    _Id = value;
+                }
+            }
+
 
             #region State [pgis]
             [BsonIgnore]
