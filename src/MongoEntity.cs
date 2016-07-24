@@ -118,7 +118,8 @@ namespace SearchAThing
             }
 
             /// <summary>
-            /// Sets the state to deleted
+            /// Delete an attached entity.
+            /// For detached entity use ctx.Delete(x) instead.
             /// </summary>
             public void Delete()
             {

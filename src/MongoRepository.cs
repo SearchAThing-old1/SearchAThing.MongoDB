@@ -81,11 +81,13 @@ namespace SearchAThing
 
                         foreach (var x in diff.CollectionElementsToRemove)
                         {
-                            updatesCollDel.Add(Builders<T>.Update.Pull(diff.PropertyFullPath, x));                            
+                            updatesCollDel.Add(Builders<T>.Update.Pull(diff.PropertyFullPath, x));
                         }
                     }
                     else
+                    {
                         updatesChanges.Add(Builders<T>.Update.Set(diff.PropertyFullPath, diff.NewPropertyValue));
+                    }
                 }
 
                 // do field updates
@@ -98,13 +100,13 @@ namespace SearchAThing
                         {
                             Debug.WriteLine($"\t{x.ToString()}");
                         }
-                    }
+                    }                    
 
                     var filter = Builders<T>.Filter.Eq((t) => t.Id, ent.Id);
                     var update = Builders<T>.Update.Combine(updatesChanges);
                     Collection.UpdateMany(filter, update);
                 }
-
+               
                 // do collection add
                 if (updatesCollAdd.Count > 0)
                 {
