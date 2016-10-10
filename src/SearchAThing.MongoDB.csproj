@@ -30,20 +30,20 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="MongoDB.Bson, Version=2.2.4.26, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>$(SolutionDir)\packages\MongoDB.Bson.2.2.4\lib\net45\MongoDB.Bson.dll</HintPath>
+    <Reference Include="MongoDB.Bson, Version=2.4.0.41, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>C:\nuget-packages\MongoDB.Bson.2.4.0-beta1\lib\net45\MongoDB.Bson.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="MongoDB.Driver, Version=2.2.4.26, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>$(SolutionDir)\packages\MongoDB.Driver.2.2.4\lib\net45\MongoDB.Driver.dll</HintPath>
+    <Reference Include="MongoDB.Driver, Version=2.4.0.41, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>C:\nuget-packages\MongoDB.Driver.2.4.0-beta1\lib\net45\MongoDB.Driver.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="MongoDB.Driver.Core, Version=2.2.4.26, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>$(SolutionDir)\packages\MongoDB.Driver.Core.2.2.4\lib\net45\MongoDB.Driver.Core.dll</HintPath>
+    <Reference Include="MongoDB.Driver.Core, Version=2.4.0.41, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>C:\nuget-packages\MongoDB.Driver.Core.2.4.0-beta1\lib\net45\MongoDB.Driver.Core.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="Polly, Version=4.3.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>$(SolutionDir)\packages\Polly.4.3.0\lib\net45\Polly.dll</HintPath>
+    <Reference Include="Polly, Version=4.5.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>C:\nuget-packages\Polly.4.5.0-beta-netstandar-0001\lib\net45\Polly.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
