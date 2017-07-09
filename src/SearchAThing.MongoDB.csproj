@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>SearchAThing.MongoDB</RootNamespace>
     <AssemblyName>SearchAThing.MongoDB</AssemblyName>
-    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
   </PropertyGroup>
@@ -50,12 +50,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\SearchAThing.Core\src\SearchAThing.Core.csproj">
-      <Project>{8162a30e-a46d-4a78-ba12-1f376ac6f1b4}</Project>
-      <Name>SearchAThing.Core</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <PackageReference Include="MongoDB.Bson">
       <Version>2.4.3</Version>
     </PackageReference>
@@ -67,6 +61,9 @@
     </PackageReference>
     <PackageReference Include="Polly">
       <Version>5.0.6</Version>
+    </PackageReference>
+    <PackageReference Include="SearchAThing.Core">
+      <Version>1.0.0-CI00012</Version>
     </PackageReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
