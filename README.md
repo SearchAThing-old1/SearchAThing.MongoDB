@@ -7,7 +7,9 @@ SearchAThing MongoDB extensions
 
 ## Installation
 
-- nuget feed : `https://www.myget.org/F/searchathing/api/v3/index.json`
+- nuget feeds
+  - searchathing :`https://www.myget.org/F/searchathing/api/v3/index.json`
+  - imagesharp : `https://www.myget.org/F/imagesharp/api/v3/index.json`
 - pre-release package : `SearchAThing.MongoDB`
 
 ## Mongo Entity structure
